@@ -5,8 +5,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
+#include <strings.h>
 
 void error(char *msg)
 {
@@ -17,7 +18,7 @@ void error(char *msg)
 int main(int argc, char *argv[])
 {
      int sockfd, newsockfd, portno, clilen;
-     char buffer[256];
+     char buffer[1001];
      struct sockaddr_in serv_addr, cli_addr;
      int n;
 
@@ -53,16 +54,48 @@ int main(int argc, char *argv[])
      if (newsockfd < 0) 
           error("ERROR on accept");
 
-     bzero(buffer,256);
-     n = read(newsockfd, buffer, 255);
+    bzero(buffer,1001);
 
-     if (n < 0) error("ERROR reading from socket");
+    printf("Welcome to console messenger! You are on port %s. Type \'Quit!\' to exit.\n", argv[1]);
 
-     printf("Here is the message: %s\n",buffer);
+    while(strcmp(buffer, "Quit!") != 0) {
 
-     n = write(newsockfd, "I got your message", 18);
+        //Phase 1: Client sends message to server, server recieves
+        //message, and returns 'sent' to the client
 
-     if (n < 0) error("ERROR writing to socket");
+        n = read(newsockfd, buffer, 1000);
+        if (n < 0) 
+            error("ERROR reading from socket");
+        printf("Client: %s\n",buffer);
+
+        bzero(buffer,1001);
+
+        n = write(newsockfd, "Sent", 18);
+        if (n < 0)
+            error("ERROR writing to socket");
+
+        bzero(buffer,1001);
+
+        //Phase 2: Server sends message to client, client recieves
+        //message, and returns 'sent' to the server
+
+        printf("Send: ");
+        bzero(buffer, 1001);
+        fgets(buffer, 1000, stdin);
+
+        n = write(newsockfd, buffer, strlen(buffer));
+        if (n < 0) 
+            error("ERROR writing to socket");
+
+        bzero(buffer,1001);
+
+        n = read(newsockfd, buffer, 1000);
+        if (n < 0) 
+            error("ERROR reading from socket");
+        printf("%s\n\n",buffer);
+
+        bzero(buffer,1001);
+    }
 
      return 0; 
 }

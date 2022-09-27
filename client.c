@@ -4,9 +4,9 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
 #include <unistd.h>
+#include <strings.h>
 
 void error(char *msg)
 {
@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server; 
 /*The hostent structure is used by functions to store information about a given host, such as host name, IPv4 address, and so forth*/
-    char buffer[256];
+    char buffer[1001];
 
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
@@ -53,23 +53,48 @@ int main(int argc, char *argv[])
     if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) 
         error("ERROR connecting");
 
-    printf("Please enter the message: ");
-    bzero(buffer, 256);
-    fgets(buffer, 255, stdin);
+    printf("Welcome to console messenger! You are on port %s. Type \'Quit!\' to exit.\n", argv[2]);
 
-    n = write(sockfd, buffer, strlen(buffer));
+    while(strcmp(buffer, "Quit!") != 0) {
 
-    if (n < 0) 
-         error("ERROR writing to socket");
+        //Phase 1: Client sends message to server, server recieves
+        //message, and returns 'sent' to the client
+        printf("Send: ");
+        bzero(buffer, 1001);
+        fgets(buffer, 1000, stdin);
 
-    bzero(buffer, 256);
+        n = write(sockfd, buffer, strlen(buffer));
+        if (n < 0) 
+            error("ERROR writing to socket");
 
-    n = read(sockfd, buffer, 255);
+        bzero(buffer, 1001);
 
-    if (n < 0) 
-         error("ERROR reading from socket");
+        n = read(sockfd, buffer, 1000);
+        if (n < 0) 
+            error("ERROR reading from socket");
+        printf("%s\n\n",buffer);
 
-    printf("%s\n",buffer);
-    
+        bzero(buffer, 1001);
+
+        //Phase 2: Server sends message to client, client recieves
+        //message, and returns 'sent' to the server
+
+        n = read(sockfd, buffer, 1000);
+        if (n < 0) 
+            error("ERROR reading from socket");
+        printf("Server: %s\n",buffer);
+
+        bzero(buffer, 1001);
+
+        n = write(sockfd, "Sent", 18);
+        if (n < 0) 
+            error("ERROR writing to socket");
+
+        bzero(buffer, 1001);
+
+        
+
+    }
+
     return 0;
 }
